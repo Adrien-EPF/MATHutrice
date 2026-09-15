@@ -158,7 +158,14 @@ if not CLIENT_SECRET:
 if not TENANT_ID:
     raise ValueError("TENANT_ID missing")
 
-REDIRECT_URL = "https://mathutrice-preprod.mde.epf.fr/auth"
+REDIRECT_URL = os.getenv(
+    "REDIRECT_URL",
+    "https://mathutrice-preprod.mde.epf.fr/auth",
+)
+POST_LOGOUT_REDIRECT_URL = os.getenv(
+    "POST_LOGOUT_REDIRECT_URL",
+    "https://mathutrice-preprod.mde.epf.fr/test_login",
+)
 SCOPE = ["User.Read"]
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 
@@ -183,6 +190,63 @@ def get_msal_app():
 
 def get_current_user(request: Request):
     return request.session.get("user")
+
+
+# ------------------------------------------------------------------
+# Sign-in helpers
+# ------------------------------------------------------------------
+
+
+def is_allowed_email(email: Optional[str]) -> bool:
+    return bool(email) and email.endswith(("@epfedu.fr", "@epf.fr"))
+
+
+def sign_in(
+    request: Request,
+    session: Session,
+    email: str,
+    name: str,
+    role: Optional[str] = None,
+) -> str:
+    now = datetime.utcnow()
+
+    user = session.exec(
+        select(models.User).where(models.User.email == email)
+    ).first()
+
+    from fonctions_python.session_generator import init_progressions_for_user
+
+    if user:
+        user.last_active = now
+        if role:
+            user.role = role
+
+    else:
+        user = models.User(
+            sso_id=uuid.uuid4(),
+            name=name,
+            email=email,
+            role=role or "Student",
+            created_at=now,
+            last_active=now,
+        )
+
+    session.add(user)
+    session.commit()
+
+    init_progressions_for_user(user.sso_id, session)
+
+    request.session["user"] = {
+        "email": email,
+        "name": name,
+        "role": user.role,
+        "impersonate": False,
+    }
+
+    if user.role in ("Teacher", "Admin"):
+        return "/teacher"
+
+    return "/"
 
 
 # ------------------------------------------------------------------
@@ -262,7 +326,7 @@ async def auth_callback(
     claims = result.get("id_token_claims", {})
     email = claims.get("email") or claims.get("preferred_username")
 
-    if not email or not email.endswith(("@epfedu.fr", "@epf.fr")):
+    if not is_allowed_email(email):
         return HTMLResponse(
             """
             <h2>⛔ Accès refusé</h2>
@@ -272,51 +336,10 @@ async def auth_callback(
         )
 
     name = claims.get("name", "Unknown User")
-    now = datetime.utcnow()
 
-    existing_user = session.exec(
-        select(models.User).where(models.User.email == email)
-    ).first()
+    redirect_path = sign_in(request, session, email, name)
 
-    from fonctions_python.session_generator import init_progressions_for_user
-
-    if existing_user:
-        existing_user.last_active = now
-        session.add(existing_user)
-        session.commit()
-
-        init_progressions_for_user(existing_user.sso_id, session)
-
-        role = existing_user.role
-
-    else:
-        new_user = models.User(
-            sso_id=uuid.uuid4(),
-            name=name,
-            email=email,
-            role="Student",
-            created_at=now,
-            last_active=now,
-        )
-
-        session.add(new_user)
-        session.commit()
-
-        init_progressions_for_user(new_user.sso_id, session)
-
-        role = "Student"
-
-    request.session["user"] = {
-        "email": email,
-        "name": name,
-        "role": role,
-        "impersonate": False,
-    }
-
-    if role in ("Teacher", "Admin"):
-        return RedirectResponse("/teacher", status_code=302)
-
-    return RedirectResponse("/", status_code=302)
+    return RedirectResponse(redirect_path, status_code=302)
 
 
 # ------------------------------------------------------------------
@@ -332,7 +355,7 @@ async def logout(request: Request):
         f"https://login.microsoftonline.com/"
         f"{TENANT_ID}/oauth2/v2.0/logout"
         f"?post_logout_redirect_uri="
-        f"https://mathutrice-preprod.mde.epf.fr/test_login"
+        f"{POST_LOGOUT_REDIRECT_URL}"
     )
 
     return RedirectResponse(logout_url)
