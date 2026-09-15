@@ -26,6 +26,7 @@ import shutil
 import os
 import uuid
 import json
+import hmac
 from datetime import datetime, timedelta
 
 
@@ -119,11 +120,17 @@ if AUTH_MODE not in ("entra", "dev"):
         f"AUTH_MODE invalid: {os.getenv('AUTH_MODE')!r} (expected 'entra' or 'dev')"
     )
 
+DEV_LOGIN_KEY = (os.getenv("DEV_LOGIN_KEY") or "").strip() or None
+
 if AUTH_MODE == "dev":
+    key_status = "défini" if DEV_LOGIN_KEY else "non défini"
     print(
         "WARNING: AUTH_MODE=dev, connexion de développement active "
-        "(aucune authentification, ne jamais utiliser en production)"
+        "(aucune authentification, ne jamais utiliser en production), "
+        f"DEV_LOGIN_KEY {key_status}"
     )
+elif DEV_LOGIN_KEY:
+    print("WARNING: DEV_LOGIN_KEY défini mais ignoré (AUTH_MODE=entra)")
 
 app.add_middleware(
         SessionMiddleware,
@@ -324,6 +331,7 @@ async def dev_login_page(
             "users_by_role": users_by_role,
             "roles": list(DEV_ROLES.values()),
             "current_user": get_current_user(request),
+            "key_required": bool(DEV_LOGIN_KEY),
         },
     )
 
@@ -333,8 +341,17 @@ async def dev_login(
     email: str = Form(...),
     name: Optional[str] = Form(None),
     role: Optional[str] = Form(None),
+    key: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
+    if DEV_LOGIN_KEY and not hmac.compare_digest(
+        (key or "").encode(), DEV_LOGIN_KEY.encode()
+    ):
+        return HTMLResponse(
+            "<h2>🔒 Clé invalide</h2><p>Clé de connexion requise.</p>",
+            status_code=401,
+        )
+
     email = email.strip()
 
     if not is_allowed_email(email):

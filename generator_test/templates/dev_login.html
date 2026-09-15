@@ -81,6 +81,14 @@
     <p class="current">Connecté en tant que {{ current_user.name }} ({{ current_user.email }}, {{ current_user.role }})</p>
     {% endif %}
 
+    {% if key_required %}
+    <section class="card">
+      <h2>Clé de connexion</h2>
+      <label for="key">Clé</label>
+      <input id="key" name="key" type="password" required autocomplete="off">
+    </section>
+    {% endif %}
+
     {% for role, users in users_by_role.items() %}
     <section class="card">
       <h2>{{ role }} ({{ users | length }})</h2>
@@ -123,5 +131,32 @@
       </form>
     </section>
   </main>
+
+  {% if key_required %}
+  <script>
+    // Le champ clé est hors des formulaires : on le recopie à chaque envoi.
+    const keyInput = document.getElementById("key");
+
+    document.querySelectorAll('form[action="/dev/login"]').forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        if (!keyInput.reportValidity()) {
+          event.preventDefault();
+          return;
+        }
+
+        let hidden = form.querySelector('input[type="hidden"][name="key"]');
+
+        if (!hidden) {
+          hidden = document.createElement("input");
+          hidden.type = "hidden";
+          hidden.name = "key";
+          form.appendChild(hidden);
+        }
+
+        hidden.value = keyInput.value;
+      });
+    });
+  </script>
+  {% endif %}
 </body>
 </html>
