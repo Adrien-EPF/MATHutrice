@@ -304,6 +304,30 @@ def name_from_email(email: str) -> str:
     return local_part.replace(".", " ").replace("_", " ").title()
 
 
+async def dev_login_page(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    users = session.exec(
+        select(models.User).order_by(models.User.name, models.User.email)
+    ).all()
+
+    users_by_role = {role: [] for role in DEV_ROLES.values()}
+
+    for user in users:
+        users_by_role.setdefault(user.role, []).append(user)
+
+    return templates.TemplateResponse(
+        "dev_login.html",
+        {
+            "request": request,
+            "users_by_role": users_by_role,
+            "roles": list(DEV_ROLES.values()),
+            "current_user": get_current_user(request),
+        },
+    )
+
+
 async def dev_login(
     request: Request,
     email: str = Form(...),
@@ -347,6 +371,7 @@ async def dev_login(
 
 
 if AUTH_MODE == "dev":
+    app.get("/dev/login", response_class=HTMLResponse)(dev_login_page)
     app.post("/dev/login")(dev_login)
 
 

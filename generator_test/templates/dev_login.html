@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>MATHutrice — Connexion de développement</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --purple-dark: #542365;
+      --purple-light: #8c52f0;
+      --pink-hot: #cb0a67;
+      --bg: #f7f4fb;
+      --white: #ffffff;
+      --text-dark: #1a0a20;
+      --text-muted: #7a5a85;
+      --border: rgba(84,35,101,0.10);
+      --shadow: 0 2px 16px rgba(84,35,101,0.08);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      color: var(--text-dark); background: var(--bg);
+      padding: 40px 20px;
+    }
+
+    main { max-width: 760px; margin: 0 auto; }
+
+    h1 { color: var(--purple-dark); font-size: 26px; margin-bottom: 8px; }
+    h2 { color: var(--purple-dark); font-size: 17px; margin-bottom: 12px; }
+
+    .warning {
+      background: #fff0f6; color: var(--pink-hot);
+      border: 1px solid rgba(203,10,103,0.25); border-radius: var(--radius);
+      padding: 10px 14px; font-size: 13px; margin-bottom: 24px;
+    }
+
+    .current { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+
+    .card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 20px; margin-bottom: 20px;
+    }
+
+    .users { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+    .user-btn {
+      width: 100%; text-align: left; cursor: pointer;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 14px; font-family: inherit; font-size: 14px; color: var(--text-dark);
+    }
+    .user-btn:hover { border-color: var(--purple-light); }
+    .user-email { color: var(--text-muted); font-size: 12px; margin-left: 8px; }
+
+    .empty { color: var(--text-muted); font-size: 13px; }
+
+    label { display: block; font-size: 13px; color: var(--text-muted); margin: 12px 0 4px; }
+
+    input, select {
+      width: 100%; padding: 9px 12px; font-family: inherit; font-size: 14px;
+      border: 1px solid var(--border); border-radius: 10px; background: var(--white);
+    }
+
+    .submit {
+      margin-top: 16px; cursor: pointer; border: none; border-radius: 10px;
+      background: var(--purple-dark); color: var(--white);
+      padding: 10px 18px; font-family: inherit; font-size: 14px; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Connexion de développement</h1>
+    <p class="warning">AUTH_MODE=dev : aucune authentification, ne jamais utiliser en production.</p>
+
+    {% if current_user %}
+    <p class="current">Connecté en tant que {{ current_user.name }} ({{ current_user.email }}, {{ current_user.role }})</p>
+    {% endif %}
+
+    {% for role, users in users_by_role.items() %}
+    <section class="card">
+      <h2>{{ role }} ({{ users | length }})</h2>
+      {% if users %}
+      <ul class="users">
+        {% for user in users %}
+        <li>
+          <form method="post" action="/dev/login">
+            <input type="hidden" name="email" value="{{ user.email }}">
+            <button type="submit" class="user-btn">
+              {{ user.name }}<span class="user-email">{{ user.email }}</span>
+            </button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty">Aucun utilisateur.</p>
+      {% endif %}
+    </section>
+    {% endfor %}
+
+    <section class="card">
+      <h2>Autre utilisateur</h2>
+      <form method="post" action="/dev/login">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required placeholder="prenom.nom@epfedu.fr">
+
+        <label for="name">Nom (optionnel)</label>
+        <input id="name" name="name" type="text">
+
+        <label for="role">Rôle</label>
+        <select id="role" name="role">
+          {% for role in roles %}
+          <option value="{{ role }}" {% if role == "Student" %}selected{% endif %}>{{ role }}</option>
+          {% endfor %}
+        </select>
+
+        <button type="submit" class="submit">Se connecter</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
