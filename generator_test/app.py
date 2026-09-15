@@ -155,6 +155,8 @@ app.mount(
 )
 
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+templates.env.globals["auth_mode"] = AUTH_MODE
+templates.env.globals["dev_login_key_set"] = bool(DEV_LOGIN_KEY)
 
 UPLOAD_DIR = os.path.join(BASE_DIR, "rag_documents")
 os.makedirs(UPLOAD_DIR, exist_ok=True)

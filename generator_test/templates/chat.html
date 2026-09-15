@@ -814,9 +814,9 @@
     @media (max-width: 900px) {
       .sidebar {
         position: fixed;
-        top: 0;
+        top: var(--dev-banner-h, 0);
         left: var(--iconbar-w);
-        height: 100vh;
+        height: calc(100vh - var(--dev-banner-h, 0px));
         box-shadow: var(--shadow);
       }
 
@@ -849,6 +849,7 @@
 </head>
 
 <body>
+{% include "_dev_banner.html" %}
 
   <!-- ICON BAR -->
   <nav class="iconbar">

@@ -1,0 +1,38 @@
+{% if auth_mode == "dev" %}
+{% set banner_user = request.session.get("user") %}
+<style>
+  .dev-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 2147483647;
+    min-height: 32px; padding: 6px 16px;
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 8px;
+    background: #c0392b; color: #ffffff;
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 500; line-height: 1.4;
+    text-align: center;
+  }
+  .dev-banner code { font-family: inherit; font-weight: 700; }
+  .dev-banner a { color: #ffffff; font-weight: 700; text-decoration: underline; }
+  :root { --dev-banner-h: 32px; }
+  body { padding-top: var(--dev-banner-h); }
+</style>
+<div class="dev-banner" id="devBanner" role="status">
+  <span>
+    Mode développement : connexion sans authentification{% if not dev_login_key_set %}, accès ouvert à tous{% endif %}.
+    {% if banner_user %}
+    Connecté en tant que <code>{{ banner_user.email }}</code> (<code>{{ banner_user.role }}</code>)
+    {% else %}
+    Non connecté
+    {% endif %}
+  </span>
+  <span>· <a href="/dev/login">Changer d'utilisateur</a></span>
+</div>
+<script>
+  (function () {
+    var banner = document.getElementById('devBanner');
+    function fit() { document.documentElement.style.setProperty('--dev-banner-h', banner.offsetHeight + 'px'); }
+    fit();
+    window.addEventListener('resize', fit);
+    window.addEventListener('load', fit);
+    if (document.fonts) document.fonts.ready.then(fit);
+  })();
+</script>
+{% endif %}
