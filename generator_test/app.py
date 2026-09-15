@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends, UploadFile, File
+from fastapi import FastAPI, Request, Depends, UploadFile, File, Form
 from fastapi.responses import (
     HTMLResponse,
     JSONResponse,
@@ -112,10 +112,23 @@ SESSION_SECRET = os.getenv("SESSION_SECRET")
 if not SESSION_SECRET:
     raise ValueError("SESSION_SECRET missing")
 
+AUTH_MODE = (os.getenv("AUTH_MODE") or "entra").strip().lower()
+
+if AUTH_MODE not in ("entra", "dev"):
+    raise ValueError(
+        f"AUTH_MODE invalid: {os.getenv('AUTH_MODE')!r} (expected 'entra' or 'dev')"
+    )
+
+if AUTH_MODE == "dev":
+    print(
+        "WARNING: AUTH_MODE=dev, connexion de développement active "
+        "(aucune authentification, ne jamais utiliser en production)"
+    )
+
 app.add_middleware(
         SessionMiddleware,
         secret_key=SESSION_SECRET,
-        https_only=True,
+        https_only=AUTH_MODE != "dev",
         same_site="lax",
         max_age=3600,
 )
@@ -149,14 +162,15 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 TENANT_ID = os.getenv("TENANT_ID")
 
-if not CLIENT_ID:
-    raise ValueError("CLIENT_ID missing")
+if AUTH_MODE == "entra":
+    if not CLIENT_ID:
+        raise ValueError("CLIENT_ID missing")
 
-if not CLIENT_SECRET:
-    raise ValueError("CLIENT_SECRET missing")
+    if not CLIENT_SECRET:
+        raise ValueError("CLIENT_SECRET missing")
 
-if not TENANT_ID:
-    raise ValueError("TENANT_ID missing")
+    if not TENANT_ID:
+        raise ValueError("TENANT_ID missing")
 
 REDIRECT_URL = os.getenv(
     "REDIRECT_URL",
@@ -256,6 +270,9 @@ def sign_in(
 
 @app.get("/test_login")
 async def login(request: Request):
+    if AUTH_MODE == "dev":
+        return RedirectResponse("/dev/login")
+
     msal_app = get_msal_app()
 
     #state en prod à activer dans /auth en prod
@@ -275,11 +292,69 @@ async def login(request: Request):
 
 
 # ------------------------------------------------------------------
+# DEV LOGIN (AUTH_MODE=dev)
+# ------------------------------------------------------------------
+
+
+DEV_ROLES = {"student": "Student", "teacher": "Teacher", "admin": "Admin"}
+
+
+def name_from_email(email: str) -> str:
+    local_part = email.split("@")[0]
+    return local_part.replace(".", " ").replace("_", " ").title()
+
+
+async def dev_login(
+    request: Request,
+    email: str = Form(...),
+    name: Optional[str] = Form(None),
+    role: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    email = email.strip()
+
+    if not is_allowed_email(email):
+        return HTMLResponse(
+            """
+            <h2>⛔ Accès refusé</h2>
+            <p>Adresse EPF obligatoire.</p>
+            """,
+            status_code=403,
+        )
+
+    role = (role or "").strip()
+
+    if role:
+        role = DEV_ROLES.get(role.lower())
+
+        if not role:
+            return HTMLResponse(
+                "<h2>❌ Rôle invalide</h2><p>Student, Teacher ou Admin.</p>",
+                status_code=400,
+            )
+
+    name = name.strip() if name else ""
+
+    if not name:
+        user = session.exec(
+            select(models.User).where(models.User.email == email)
+        ).first()
+        name = user.name if user else name_from_email(email)
+
+    redirect_path = sign_in(request, session, email, name, role)
+
+    return RedirectResponse(redirect_path, status_code=303)
+
+
+if AUTH_MODE == "dev":
+    app.post("/dev/login")(dev_login)
+
+
+# ------------------------------------------------------------------
 # AUTH CALLBACK
 # ------------------------------------------------------------------
 
 
-@app.get("/auth")
 async def auth_callback(
     request: Request,
     code: str = None,
@@ -342,6 +417,10 @@ async def auth_callback(
     return RedirectResponse(redirect_path, status_code=302)
 
 
+if AUTH_MODE == "entra":
+    app.get("/auth")(auth_callback)
+
+
 # ------------------------------------------------------------------
 # LOGOUT
 # ------------------------------------------------------------------
@@ -350,6 +429,9 @@ async def auth_callback(
 @app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
+
+    if AUTH_MODE == "dev":
+        return RedirectResponse("/")
 
     logout_url = (
         f"https://login.microsoftonline.com/"
