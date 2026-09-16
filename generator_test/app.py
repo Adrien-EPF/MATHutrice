@@ -1757,7 +1757,7 @@ async def feedback_endpoint(
     data: FeedbackRequest,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.base_generator import client, MODEL
+    from fonctions_python.llm_client import client, MODEL
     from lacune_evaluation.LLM_as_Evaluator import diagnostiquer_depuis_competence
 
     user = get_current_user(request)

@@ -15,14 +15,14 @@ from openai import OpenAI
 
 load_dotenv()
 
-missing = [
+_missing = [
     name
     for name in ("LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL")
     if not os.getenv(name)
 ]
 
-if missing:
-    raise ValueError(f"{', '.join(missing)} missing")
+if _missing:
+    raise ValueError(f"{', '.join(_missing)} missing")
 
 MODEL = os.environ["LLM_MODEL"]
 
