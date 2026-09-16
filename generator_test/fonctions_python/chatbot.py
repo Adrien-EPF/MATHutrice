@@ -1,12 +1,4 @@
-from mistralai import Mistral
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-api_key = os.getenv("MISTRAL_API_KEY")
-client = Mistral(api_key=api_key)
-MODEL = "mistral-small"
+from fonctions_python.llm_client import client, MODEL
 
 system_prompt = """Tu es MATHutrice, une tutrice IA specialisee en mathematiques.
 
@@ -27,7 +19,7 @@ MAX_HISTORY = 10
 
 def chat_stream_with_history(history: list[dict]):
     """
-    Streaming Mistral avec historique complet depuis la DB.
+    Streaming LLM avec historique complet depuis la DB.
     history = [{"role": "user"|"assistant", "content": "..."}]
     """
 
@@ -38,11 +30,13 @@ def chat_stream_with_history(history: list[dict]):
     full_response = ""
 
     try:
-        stream = client.chat.stream(model=MODEL, messages=messages)
+        stream = client.chat.completions.create(
+            model=MODEL, messages=messages, stream=True
+        )
 
         for event in stream:
-            if event.data.choices and len(event.data.choices) > 0:
-                delta = event.data.choices[0].delta
+            if event.choices and len(event.choices) > 0:
+                delta = event.choices[0].delta
                 if delta.content:
                     chunk = delta.content
                     full_response += chunk
@@ -65,7 +59,9 @@ def chat(user_input: str) -> str:
     """Version non-streaming du chat"""
     messages_history.append({"role": "user", "content": user_input})
     try:
-        response = client.chat.complete(model=MODEL, messages=messages_history)
+        response = client.chat.completions.create(
+            model=MODEL, messages=messages_history
+        )
         reply = response.choices[0].message.content
         messages_history.append({"role": "assistant", "content": reply})
         return reply
@@ -80,11 +76,13 @@ def chat_stream(user_input: str):
     full_response = ""
 
     try:
-        stream = client.chat.stream(model=MODEL, messages=messages_history)
+        stream = client.chat.completions.create(
+            model=MODEL, messages=messages_history, stream=True
+        )
 
         for event in stream:
-            if event.data.choices and len(event.data.choices) > 0:
-                delta = event.data.choices[0].delta
+            if event.choices and len(event.choices) > 0:
+                delta = event.choices[0].delta
                 if delta.content:
                     chunk = delta.content
                     full_response += chunk

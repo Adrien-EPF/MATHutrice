@@ -132,6 +132,9 @@ if AUTH_MODE == "dev":
 elif DEV_LOGIN_KEY:
     print("WARNING: DEV_LOGIN_KEY défini mais ignoré (AUTH_MODE=entra)")
 
+# Refuse de démarrer sans LLM_BASE_URL, LLM_API_KEY et LLM_MODEL.
+from fonctions_python import llm_client  # noqa: E402, F401
+
 app.add_middleware(
         SessionMiddleware,
         secret_key=SESSION_SECRET,
@@ -181,14 +184,16 @@ if AUTH_MODE == "entra":
     if not TENANT_ID:
         raise ValueError("TENANT_ID missing")
 
-REDIRECT_URL = os.getenv(
-    "REDIRECT_URL",
-    "https://mathutrice-preprod.mde.epf.fr/auth",
-)
-POST_LOGOUT_REDIRECT_URL = os.getenv(
-    "POST_LOGOUT_REDIRECT_URL",
-    "https://mathutrice-preprod.mde.epf.fr/test_login",
-)
+REDIRECT_URL = os.getenv("REDIRECT_URL")
+POST_LOGOUT_REDIRECT_URL = os.getenv("POST_LOGOUT_REDIRECT_URL")
+
+if AUTH_MODE == "entra":
+    if not REDIRECT_URL:
+        raise ValueError("REDIRECT_URL missing")
+
+    if not POST_LOGOUT_REDIRECT_URL:
+        raise ValueError("POST_LOGOUT_REDIRECT_URL missing")
+
 SCOPE = ["User.Read"]
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 
@@ -1752,7 +1757,7 @@ async def feedback_endpoint(
     data: FeedbackRequest,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.base_generator import client, MODEL
+    from fonctions_python.llm_client import client, MODEL
     from lacune_evaluation.LLM_as_Evaluator import diagnostiquer_depuis_competence
 
     user = get_current_user(request)
@@ -1785,7 +1790,7 @@ async def feedback_endpoint(
             "Ne donne JAMAIS la bonne reponse. Utilise le tu. Sois concis. Pas de JSON ni balises.\n"
         )
 
-        response = client.chat.complete(
+        response = client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
         )

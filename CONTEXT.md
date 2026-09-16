@@ -1,15 +1,21 @@
 # MATHutrice
 
-Tuteur pédagogique fondé sur un LLM qui aide les étudiants de première année de l'EPF à travailler les outils mathématiques par notions, compétences et entraînement.
+LLM-based tutor that helps EPF first-year students practise mathematical tools through notions, competences and training.
 
-## Langage
+## Language
 
-### Authentification
+### Authentication
 
-**Connexion de développement** (`AUTH_MODE=dev`) :
-Connexion sans fournisseur d'identité : on choisit une adresse mail et un rôle (Student, Teacher ou Admin), et on est connecté ainsi, sans preuve d'identité. Elle ne dépend d'aucun utilisateur pré-existant. Elle n'existe que lorsque `AUTH_MODE=dev` et ne doit jamais servir en production.
-_À éviter_ : impersonation, usurpation, fake login
+**Connexion de développement** (`AUTH_MODE=dev`):
+Sign-in without an identity provider: you pick an email address and a role (Student, Teacher or Admin) and are signed in as that user, with no proof of identity. It does not depend on any pre-existing user. It only exists when `AUTH_MODE=dev` and must never be used in production.
+_Avoid_: impersonation, usurpation, fake login
 
-**Impersonation** :
-Un Admin réellement authentifié consulte l'application en tant qu'un autre utilisateur, puis revient à son propre compte. Elle suppose une vraie connexion derrière, contrairement à la connexion de développement.
-_À éviter_ : connexion de développement, dev login
+**Impersonation**:
+A really authenticated Admin views the application as another user, then switches back to their own account. It assumes a real sign-in behind it, unlike the **connexion de développement**.
+_Avoid_: connexion de développement, dev login
+
+### LLM
+
+**LLM endpoint**:
+The OpenAI-compatible API every LLM call goes through, set by `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL`. The course gateway and Mistral are both LLM endpoints.
+_Avoid_: Mistral (when meaning the endpoint in general)

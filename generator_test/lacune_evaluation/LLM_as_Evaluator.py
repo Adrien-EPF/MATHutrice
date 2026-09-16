@@ -1,4 +1,3 @@
-from mistralai import Mistral
 import json
 import re
 import sys
@@ -6,12 +5,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "fonctions_python"))
 from main import REFERENTIEL
-
-API_KEY = "fOTxUhR9dDPIsmNOCRIxggr0Erhew4yk"
-
-client = Mistral(api_key=API_KEY)
-
-MODEL = "mistral-small"
+from fonctions_python.llm_client import client, MODEL
 
 
 def _build_flat_competences(referentiel):
@@ -90,7 +84,7 @@ def detecter_competences(notion, enonce, reponse_correcte):
     """Passe 1 : identifie toutes les compétences que l'exercice évalue."""
     toutes_competences = _build_flat_competences(REFERENTIEL)
     prompt = prompt_detection(notion, enonce, reponse_correcte, toutes_competences)
-    response = client.chat.complete(
+    response = client.chat.completions.create(
         model=MODEL, messages=[{"role": "user", "content": prompt}]
     )
     return _parse_json(response.choices[0].message.content)
@@ -208,7 +202,7 @@ def analyser_lacunes(
         nb_tentatives,
         dernieres_erreurs,
     )
-    response = client.chat.complete(
+    response = client.chat.completions.create(
         model=MODEL, messages=[{"role": "user", "content": prompt}]
     )
     return _parse_json(response.choices[0].message.content)
