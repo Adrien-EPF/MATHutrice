@@ -2,7 +2,7 @@
 base_generator.py — Logique commune à tous les formats de questions
 
 Contient :
-  - Configuration Mistral (client, modèle, retries)
+  - Configuration LLM (client, modèle, retries)
   - clean_json()       : nettoyage de la réponse brute
   - parse_json()       : parsing JSON avec message d'erreur clair
   - call_mistral()     : appel API avec retry automatique
@@ -17,11 +17,11 @@ et n'ajoute que ce qui lui est spécifique :
   - ask_question()
 """
 
-import os
 import re
 import json
 import logging
-from mistralai import Mistral
+
+from fonctions_python.llm_client import client, MODEL
 
 # from generator_test.lacune_evaluation.LLM_as_Evaluator import competences_dict
 # from main import REFERENTIEL
@@ -32,11 +32,7 @@ from mistralai import Mistral
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
 
-API_KEY = os.getenv("MISTRAL_API_KEY", "fOTxUhR9dDPIsmNOCRIxggr0Erhew4yk")
-MODEL = "mistral-small"
 MAX_RETRIES = 3
-
-client = Mistral(api_key=API_KEY)
 
 # ─── UTILITAIRES JSON ─────────────────────────────────────────────────────────
 
@@ -87,7 +83,7 @@ def call_mistral(
     """
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = client.chat.complete(
+            response = client.chat.completions.create(
                 model=MODEL, messages=[{"role": "user", "content": prompt}]
             )
             raw = response.choices[0].message.content

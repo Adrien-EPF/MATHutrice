@@ -151,7 +151,7 @@ def is_correct_llm(
     """
     prompt = build_correction_prompt(question, correct_answer, user_answer)
     try:
-        response = client.chat.complete(
+        response = client.chat.completions.create(
             model=MODEL, messages=[{"role": "user", "content": prompt}]
         )
         raw = response.choices[0].message.content

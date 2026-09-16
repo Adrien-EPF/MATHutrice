@@ -132,6 +132,9 @@ if AUTH_MODE == "dev":
 elif DEV_LOGIN_KEY:
     print("WARNING: DEV_LOGIN_KEY défini mais ignoré (AUTH_MODE=entra)")
 
+# Refuse de démarrer sans LLM_BASE_URL, LLM_API_KEY et LLM_MODEL.
+from fonctions_python import llm_client  # noqa: E402, F401
+
 app.add_middleware(
         SessionMiddleware,
         secret_key=SESSION_SECRET,
@@ -1787,7 +1790,7 @@ async def feedback_endpoint(
             "Ne donne JAMAIS la bonne reponse. Utilise le tu. Sois concis. Pas de JSON ni balises.\n"
         )
 
-        response = client.chat.complete(
+        response = client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
         )
