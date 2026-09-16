@@ -181,14 +181,16 @@ if AUTH_MODE == "entra":
     if not TENANT_ID:
         raise ValueError("TENANT_ID missing")
 
-REDIRECT_URL = os.getenv(
-    "REDIRECT_URL",
-    "https://mathutrice-preprod.mde.epf.fr/auth",
-)
-POST_LOGOUT_REDIRECT_URL = os.getenv(
-    "POST_LOGOUT_REDIRECT_URL",
-    "https://mathutrice-preprod.mde.epf.fr/test_login",
-)
+REDIRECT_URL = os.getenv("REDIRECT_URL")
+POST_LOGOUT_REDIRECT_URL = os.getenv("POST_LOGOUT_REDIRECT_URL")
+
+if AUTH_MODE == "entra":
+    if not REDIRECT_URL:
+        raise ValueError("REDIRECT_URL missing")
+
+    if not POST_LOGOUT_REDIRECT_URL:
+        raise ValueError("POST_LOGOUT_REDIRECT_URL missing")
+
 SCOPE = ["User.Read"]
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 
