@@ -16,9 +16,18 @@ Usage :
 
 import argparse
 
-from type_questions.qcm_generator import generate_qcm_test, run_test as run_qcm
-from type_questions.qro_generator import generate_qro_test, run_test as run_qro
-from type_questions.steps_generator import generate_steps_test, run_test as run_sbs
+from mathutrice.fonctions_python.type_questions.qcm_generator import (
+    generate_qcm_test,
+    run_test as run_qcm,
+)
+from mathutrice.fonctions_python.type_questions.qro_generator import (
+    generate_qro_test,
+    run_test as run_qro,
+)
+from mathutrice.fonctions_python.type_questions.steps_generator import (
+    generate_steps_test,
+    run_test as run_sbs,
+)
 
 
 # ─── NOTIONS DISPONIBLES ──────────────────────────────────────────────────────

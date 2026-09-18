@@ -1,11 +1,8 @@
 import json
 import re
-import sys
-import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "fonctions_python"))
-from main import REFERENTIEL
-from fonctions_python.llm_client import client, MODEL
+from mathutrice.fonctions_python.main import REFERENTIEL
+from mathutrice.fonctions_python.llm_client import client, MODEL
 
 
 def _build_flat_competences(referentiel):

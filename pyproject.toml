@@ -1,0 +1,35 @@
+[project]
+name = "mathutrice"
+version = "0.1.0"
+description = "LLM-based tutor that helps EPF first-year students practise mathematical tools."
+license = "MIT"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "mistralai==1.12.3",
+    "openai==3.14.1",
+    "fastapi[standard]==0.129.0",
+    "jinja2==3.1.6",
+    "APScheduler==3.11.2",
+    "msal==1.36.0",
+    "sqlmodel==0.0.38",
+    "psycopg2-binary==2.9.12",
+    "python-dotenv==1.2.2",
+    "python-multipart==0.0.28",
+    "uvicorn==0.47.0",
+    "itsdangerous==2.2.0",
+    "httpx==0.28.1",
+    "pydantic==2.13.4",
+    "starlette==0.52.1",
+    "sympy==1.14.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.25,<0.10"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+# The package sits at the repository root, not under src/.
+module-root = ""
+# Uploaded PDFs are runtime data, not part of the package.
+source-exclude = ["mathutrice/rag_documents"]
+wheel-exclude = ["mathutrice/rag_documents"]

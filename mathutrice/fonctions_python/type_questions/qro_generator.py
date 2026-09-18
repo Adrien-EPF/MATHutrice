@@ -12,7 +12,7 @@ La correction se fait par comparaison souple (normalisation de la chaîne)
 + un second appel Mistral en mode "correcteur" pour les cas ambigus.
 """
 
-from fonctions_python.base_generator import (
+from mathutrice.fonctions_python.base_generator import (
     call_mistral,
     generate_test,
     display_score,
