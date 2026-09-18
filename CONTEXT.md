@@ -17,5 +17,5 @@ _Avoid_: connexion de développement, dev login
 ### LLM
 
 **LLM endpoint**:
-The OpenAI-compatible API every LLM call goes through, set by `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL`. The course gateway and Mistral are both LLM endpoints.
+The OpenAI-compatible API every LLM call goes through, set by `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL`. The self-hosted gateway and Mistral are both LLM endpoints.
 _Avoid_: Mistral (when meaning the endpoint in general)
