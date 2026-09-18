@@ -134,7 +134,6 @@ elif DEV_LOGIN_KEY:
 
 # Refuse de démarrer sans LLM_BASE_URL, LLM_API_KEY et LLM_MODEL.
 # Tout ce qui suit importe le client LLM, d'où la place de ces imports.
-from mathutrice.fonctions_python import llm_client  # noqa: E402, F401
 from mathutrice.fonctions_python.llm_client import client, MODEL  # noqa: E402
 from mathutrice.fonctions_python.chatbot import (  # noqa: E402
     chat,

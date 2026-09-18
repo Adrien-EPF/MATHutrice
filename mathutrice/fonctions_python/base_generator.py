@@ -23,7 +23,7 @@ import logging
 
 from mathutrice.fonctions_python.llm_client import client, MODEL
 
-# from mathutrice.lacune_evaluation.LLM_as_Evaluator import competences_dict
+# from generator_test.lacune_evaluation.LLM_as_Evaluator import competences_dict
 # from main import REFERENTIEL
 
 

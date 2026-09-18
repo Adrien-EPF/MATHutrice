@@ -2,7 +2,6 @@
 name = "mathutrice"
 version = "0.1.0"
 description = "LLM-based tutor that helps EPF first-year students practise mathematical tools."
-readme = "README.md"
 license = "MIT"
 requires-python = ">=3.14,<3.15"
 dependencies = [
@@ -31,3 +30,6 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 # The package sits at the repository root, not under src/.
 module-root = ""
+# Uploaded PDFs are runtime data, not part of the package.
+source-exclude = ["mathutrice/rag_documents"]
+wheel-exclude = ["mathutrice/rag_documents"]

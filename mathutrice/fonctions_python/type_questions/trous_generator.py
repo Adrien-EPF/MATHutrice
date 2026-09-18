@@ -29,7 +29,8 @@ from mathutrice.fonctions_python.base_generator import (
     client,
     MODEL,
 )
-from mathutrice.fonctions_python.type_questions.qro_generator import evaluate_answer  # même logique de correction
+# même logique de correction
+from mathutrice.fonctions_python.type_questions.qro_generator import evaluate_answer
 
 
 # ─── PROMPT DE GÉNÉRATION ─────────────────────────────────────────────────────

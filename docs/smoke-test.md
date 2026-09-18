@@ -14,6 +14,8 @@ uv sync
 cp .env.example .env
 ```
 
+If `uv sync` reports `No interpreter found for Python 3.14.7`, your uv predates that Python release: run `uv self update`, then `uv sync` again.
+
 Without uv, `pip install -e .` in a virtual environment running that Python version installs the project as well, from `pyproject.toml` rather than the lockfile.
 
 In `.env`, set `LLM_API_KEY` to the key for your LLM endpoint. Leave everything else as it is.
