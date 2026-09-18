@@ -1,11 +1,6 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from database import engine
+from mathutrice.database import engine
 from sqlmodel import Session, SQLModel
-import models
+from mathutrice import models
 
 # Crée toutes les tables
 SQLModel.metadata.create_all(engine)

@@ -15,11 +15,11 @@ from urllib.parse import unquote
 from contextlib import asynccontextmanager
 from sqlmodel import SQLModel, select, delete
 from dotenv import load_dotenv
-from database import engine, get_session, Session
-from database import Session as DBSession
+from mathutrice.database import engine, get_session, Session
+from mathutrice.database import Session as DBSession
 from apscheduler.schedulers.background import BackgroundScheduler
 from decimal import Decimal
-import models
+from mathutrice import models
 import msal
 import uvicorn
 import shutil
@@ -27,6 +27,8 @@ import os
 import uuid
 import json
 import hmac
+import random
+import traceback
 from datetime import datetime, timedelta
 
 
@@ -34,13 +36,11 @@ load_dotenv()
 
 
 # ------------------------------------------------------------------
-# Lazy imports helpers
+# Referentiel
 # ------------------------------------------------------------------
 
 
 def get_referentiel():
-    from fonctions_python.main import REFERENTIEL
-
     return REFERENTIEL
 
 
@@ -133,7 +133,37 @@ elif DEV_LOGIN_KEY:
     print("WARNING: DEV_LOGIN_KEY défini mais ignoré (AUTH_MODE=entra)")
 
 # Refuse de démarrer sans LLM_BASE_URL, LLM_API_KEY et LLM_MODEL.
-from fonctions_python import llm_client  # noqa: E402, F401
+# Tout ce qui suit importe le client LLM, d'où la place de ces imports.
+from mathutrice.fonctions_python import llm_client  # noqa: E402, F401
+from mathutrice.fonctions_python.llm_client import client, MODEL  # noqa: E402
+from mathutrice.fonctions_python.chatbot import (  # noqa: E402
+    chat,
+    chat_stream_with_history,
+    reset_conversation,
+)
+from mathutrice.fonctions_python.main import (  # noqa: E402
+    REFERENTIEL,
+    generate_mixed_test,
+)
+from mathutrice.fonctions_python.session_generator import (  # noqa: E402
+    build_notion_data_with_scores,
+    generate_next_question,
+    generate_positioning_session,
+    get_competence_map_by_codes,
+    init_progressions_for_user,
+    is_first_session,
+    persist_score_update,
+)
+from mathutrice.fonctions_python.type_questions.qcm_generator import (  # noqa: E402
+    generate_qcm_test,
+)
+from mathutrice.fonctions_python.type_questions.qro_generator import (  # noqa: E402
+    evaluate_answer,
+    generate_qro_test,
+)
+from mathutrice.lacune_evaluation.LLM_as_Evaluator import (  # noqa: E402
+    diagnostiquer_depuis_competence,
+)
 
 app.add_middleware(
         SessionMiddleware,
@@ -241,8 +271,6 @@ def sign_in(
     user = session.exec(
         select(models.User).where(models.User.email == email)
     ).first()
-
-    from fonctions_python.session_generator import init_progressions_for_user
 
     if user:
         user.last_active = now
@@ -985,8 +1013,6 @@ async def chat_stream_endpoint(
     data: ChatRequest,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.chatbot import chat_stream_with_history
-
     user = get_current_user(request)
 
     if not user:
@@ -1091,8 +1117,6 @@ async def chat_stream_endpoint(
 
 @app.post("/chat/reset")
 async def chat_reset_endpoint():
-    from fonctions_python.chatbot import reset_conversation
-
     reset_conversation()
 
     return {
@@ -1108,8 +1132,6 @@ async def chat_reset_endpoint():
 
 @app.post("/chat/complete")
 async def chat_complete_endpoint(data: ChatRequest):
-    from fonctions_python.chatbot import chat
-
     try:
         response = chat(data.message)
 
@@ -1139,11 +1161,6 @@ async def reset_session_endpoint(
     data: ResetRequest,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.session_generator import (
-        get_competence_map_by_codes,
-        init_progressions_for_user,
-    )
-
     user = get_current_user(request)
 
     if not user:
@@ -1290,8 +1307,6 @@ async def check_session(
     notion_key: str,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.session_generator import is_first_session
-
     user = get_current_user(request)
 
     if not user:
@@ -1354,8 +1369,6 @@ async def positioning_endpoint(
     data: SessionRequest,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.session_generator import generate_positioning_session
-
     user = get_current_user(request)
 
     if not user:
@@ -1393,8 +1406,6 @@ async def next_question_endpoint(
     data: SessionRequest,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.session_generator import generate_next_question
-
     user = get_current_user(request)
 
     if not user:
@@ -1432,8 +1443,6 @@ async def submit_answer_endpoint(
     data: SubmitAnswerRequest,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.session_generator import persist_score_update
-
     user = get_current_user(request)
 
     if not user:
@@ -1475,8 +1484,6 @@ async def get_scores_endpoint(
     notion_key: str,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.session_generator import build_notion_data_with_scores
-
     user = get_current_user(request)
 
     if not user:
@@ -1721,8 +1728,6 @@ async def evaluate_qro_endpoint(
     request: Request,
     data: EvaluateQRORequest,
 ):
-    from fonctions_python.type_questions.qro_generator import evaluate_answer
-
     user = get_current_user(request)
 
     if not user:
@@ -1757,9 +1762,6 @@ async def feedback_endpoint(
     data: FeedbackRequest,
     session: Session = Depends(get_session),
 ):
-    from fonctions_python.llm_client import client, MODEL
-    from lacune_evaluation.LLM_as_Evaluator import diagnostiquer_depuis_competence
-
     user = get_current_user(request)
 
     if not user:
@@ -1941,8 +1943,6 @@ async def feedback_endpoint(
         }
 
     except Exception as e:
-        import traceback
-
         print("FEEDBACK ERROR:", traceback.format_exc())
 
         return JSONResponse(
@@ -1962,11 +1962,6 @@ async def next_targeted_endpoint(
     data: NextTargetedRequest,
     session: Session = Depends(get_session),
 ):
-    import random
-    from fonctions_python.type_questions.qcm_generator import generate_qcm_test
-    from fonctions_python.type_questions.qro_generator import generate_qro_test
-    from fonctions_python.session_generator import build_notion_data_with_scores
-
     user = get_current_user(request)
 
     if not user:
@@ -2045,7 +2040,6 @@ async def next_targeted_endpoint(
         }
 
     except Exception as e:
-        import traceback
         print("NEXT_TARGETED ERROR:", traceback.format_exc())
 
         return JSONResponse(
@@ -2140,10 +2134,6 @@ async def evaluation_endpoint(
     data: EvaluationRequest,
     session: Session = Depends(get_session),
 ):
-    import random
-    from fonctions_python.main import generate_mixed_test
-    from fonctions_python.session_generator import build_notion_data_with_scores
-
     user = get_current_user(request)
 
     if not user:

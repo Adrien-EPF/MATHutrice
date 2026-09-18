@@ -26,7 +26,7 @@ Différence avec trous_generator :
   - steps  : questions libres sur chaque étape de résolution (réponses plus longues)
 """
 
-from fonctions_python.base_generator import (
+from mathutrice.fonctions_python.base_generator import (
     call_mistral,
     generate_test,
     display_score,
@@ -35,7 +35,7 @@ from fonctions_python.base_generator import (
     parse_json,
     logger,
 )
-from fonctions_python.type_questions.qro_generator import evaluate_answer
+from mathutrice.fonctions_python.type_questions.qro_generator import evaluate_answer
 
 
 # ─── PROMPT ───────────────────────────────────────────────────────────────────

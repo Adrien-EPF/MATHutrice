@@ -17,11 +17,9 @@ import uuid
 from uuid import UUID
 from sqlmodel import Session, select
 
-import models
-import sys, os
-
-sys.path.insert(0, os.path.dirname(__file__))
-from main import (
+from mathutrice import models
+from mathutrice.fonctions_python.base_generator import update_scores
+from mathutrice.fonctions_python.main import (
     REFERENTIEL,
     generate_mixed_test,
     generate_exercise_randomly,
@@ -236,8 +234,6 @@ def persist_score_update(
     Donc on convertit toujours :
     referentiel_code -> competence_id UUID.
     """
-    from fonctions_python.base_generator import update_scores
-
     local_ref = copy.deepcopy(REFERENTIEL)
 
     # 1. Codes touchés par la question : ["tr01", "tr04", ...]

@@ -8,30 +8,30 @@ Lance un test en choisissant :
   - Le nombre  : n questions (ou exercices pour les trous)
 
 Usage :
-  python main.py                         # paramètres par défaut
-  python main.py --format qro            # format QRO
-  python main.py --format trous --n 2    # 2 exercices phrases à trous
-  python main.py --format qcm --notion "fractions" --niveau "débutant" --n 5
+  python -m mathutrice.fonctions_python.main                        # paramètres par défaut
+  python -m mathutrice.fonctions_python.main --format qro           # format QRO
+  python -m mathutrice.fonctions_python.main --format trous --n 2   # 2 exercices phrases à trous
+  python -m mathutrice.fonctions_python.main --format qcm --notion "fractions" --niveau "débutant" --n 5
 """
 
 import argparse
 
-from fonctions_python.type_questions.qcm_generator import (
+from mathutrice.fonctions_python.type_questions.qcm_generator import (
     generate_qcm_test,
     run_test as run_qcm,
     ask_question as ask_qcm_question,
 )
-from fonctions_python.type_questions.qro_generator import (
+from mathutrice.fonctions_python.type_questions.qro_generator import (
     generate_qro_test,
     run_test as run_qro,
     ask_question as ask_qro_question,
 )
-from fonctions_python.type_questions.steps_generator import (
+from mathutrice.fonctions_python.type_questions.steps_generator import (
     generate_steps_test,
     run_test as run_sbs,
     ask_exercice as ask_sbs_exercice,
 )
-from fonctions_python.base_generator import choisir_competence, update_scores
+from mathutrice.fonctions_python.base_generator import choisir_competence, update_scores
 
 # ─── NOTIONS DISPONIBLES ──────────────────────────────────────────────────────
 
@@ -1050,15 +1050,7 @@ def run_training(REFERENTIEL: dict, niveau: str, notion: str) -> None:
 
 def run_test(questions: list[dict]) -> None:
     """Lance un test mixte en exécutant chaque question selon son type."""
-    import sys, os
-
     NIVEAU_MAP = {"basique": "facile", "solide": "intermediaire", "expert": "difficile"}
-
-    _eval_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "lacune_evaluation"
-    )
-    if _eval_path not in sys.path:
-        sys.path.insert(0, _eval_path)
 
     def _update(q_format, competences_dict):
         _, anciens, nouveaux = update_scores(REFERENTIEL, q_format, competences_dict)
@@ -1069,7 +1061,11 @@ def run_test(questions: list[dict]) -> None:
 
     scores_initiaux = {}
     total = len(questions)
-    from LLM_as_Evaluator import diagnostiquer_depuis_competence, afficher_resultat
+    # Import local : LLM_as_Evaluator importe REFERENTIEL depuis ce module (cycle).
+    from mathutrice.lacune_evaluation.LLM_as_Evaluator import (
+        diagnostiquer_depuis_competence,
+        afficher_resultat,
+    )
 
     for i, question in enumerate(questions, start=1):
         q_type = question.get("type")

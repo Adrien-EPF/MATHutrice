@@ -18,7 +18,7 @@ La correction utilise la même logique double-passe que le QRO
 (comparaison normalisée → LLM-as-judge si nécessaire).
 """
 
-from base_generator import (
+from mathutrice.fonctions_python.base_generator import (
     call_mistral,
     generate_test,
     display_score,
@@ -29,7 +29,7 @@ from base_generator import (
     client,
     MODEL,
 )
-from qro_generator import evaluate_answer  # même logique de correction
+from mathutrice.fonctions_python.type_questions.qro_generator import evaluate_answer  # même logique de correction
 
 
 # ─── PROMPT DE GÉNÉRATION ─────────────────────────────────────────────────────

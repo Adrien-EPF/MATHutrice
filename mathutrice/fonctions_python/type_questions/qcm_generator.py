@@ -12,7 +12,7 @@ Particularité : vérification mathématique via SymPy (verifier.py)
 Les réponses fausses de Mistral sont corrigées automatiquement.
 """
 
-from fonctions_python.base_generator import (
+from mathutrice.fonctions_python.base_generator import (
     call_mistral,
     generate_test,
     display_score,
@@ -20,7 +20,7 @@ from fonctions_python.base_generator import (
     parse_json,
     logger,
 )
-from fonctions_python.verifier import apply_verification
+from mathutrice.fonctions_python.verifier import apply_verification
 
 
 # ─── PROMPT ───────────────────────────────────────────────────────────────────
