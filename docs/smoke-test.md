@@ -15,7 +15,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-In `.env`, set `LLM_API_KEY` to the key you were given for the course gateway. Leave everything else as it is.
+In `.env`, set `LLM_API_KEY` to the key for your LLM endpoint. Leave everything else as it is.
 
 ## 2. Start
 
