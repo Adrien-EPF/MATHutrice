@@ -213,3 +213,6 @@ __marimo__/
 *.pdf
 # Local SQLite database (DATABASE_URL in .env.example), created in the directory the app starts from
 mathutrice.db
+
+# macOS
+.DS_Store
