@@ -211,6 +211,7 @@ __marimo__/
 *.lo1
 
 *.pdf
+!docs/ft-math-courses/**/*.pdf
 # Local SQLite database (DATABASE_URL in .env.example), created in the directory the app starts from
 mathutrice.db
 
