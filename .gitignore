@@ -217,3 +217,7 @@ mathutrice.db
 
 # macOS
 .DS_Store
+
+# Claude Code local state
+.claude/worktrees/
+.claude/settings.local.json
