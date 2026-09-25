@@ -257,8 +257,22 @@ def get_current_user(request: Request):
 # ------------------------------------------------------------------
 
 
+ALLOWED_EMAIL_DOMAINS = {"epf.fr", "epfedu.fr"}
+
+
 def is_allowed_email(email: Optional[str]) -> bool:
-    return bool(email) and email.endswith(("@epfedu.fr", "@epf.fr"))
+    if not email:
+        return False
+
+    # The mailbox domain is what follows the last "@". Only the domain is
+    # case-insensitive: the local part is compared as it is stored.
+    local_part, _, domain = email.rpartition("@")
+
+    return (
+        bool(local_part)
+        and "@" not in local_part
+        and domain.lower() in ALLOWED_EMAIL_DOMAINS
+    )
 
 
 def sign_in(
