@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from typing import List as TList, Optional
 from urllib.parse import unquote
 from contextlib import asynccontextmanager
+from sqlalchemy import func
 from sqlmodel import SQLModel, select, delete
 from dotenv import load_dotenv
 from mathutrice.database import engine, get_session, Session
@@ -54,18 +55,31 @@ def create_db_and_tables():
 
 
 # ------------------------------------------------------------------
-# Cleanup — supprime conversations + messages de plus de 24h
+# Cleanup — supprime conversations + messages inactifs depuis plus de 24h
 # ------------------------------------------------------------------
 
 
-def cleanup_old_conversations():
+def cleanup_old_conversations(now: Optional[datetime] = None):
     with DBSession(engine) as session:
-        cutoff = datetime.utcnow() - timedelta(hours=24)
+        cutoff = (now or datetime.utcnow()) - timedelta(hours=24)
+
+        # A conversation is idle since its last message, or since it started
+        # when nothing has been said in it yet.
+        last_activity = func.coalesce(
+            func.max(models.Message.sent_at), models.Conversation.started_at
+        )
 
         old_conv_ids = session.exec(
-            select(models.Conversation.conversation_id).where(
-                models.Conversation.started_at < cutoff
+            select(models.Conversation.conversation_id)
+            .join(
+                models.Message,
+                models.Message.conversation_id == models.Conversation.conversation_id,
+                isouter=True,
             )
+            .group_by(
+                models.Conversation.conversation_id, models.Conversation.started_at
+            )
+            .having(last_activity < cutoff)
         ).all()
 
         for conv_id in old_conv_ids:
