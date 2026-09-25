@@ -1,5 +1,5 @@
 """
-llm_client.py — Client LLM partagé (API compatible OpenAI)
+client.py — Client LLM partagé (API compatible OpenAI)
 
 Point d'entrée unique vers le LLM. Le endpoint, la clé et le modèle viennent
 uniquement des settings, sans valeur par défaut dans le code :
