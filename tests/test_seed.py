@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from mathutrice import models
-from mathutrice.fonctions_python.main import REFERENTIEL
+from mathutrice.referentiel.data import REFERENTIEL
 from mathutrice.fonctions_python.seed import seed_if_empty
 from mathutrice.fonctions_python.session_generator import init_progressions_for_user
 

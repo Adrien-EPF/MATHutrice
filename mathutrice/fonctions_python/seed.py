@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlmodel import Session, select
 
 from mathutrice import models
-from mathutrice.fonctions_python.main import REFERENTIEL
+from mathutrice.referentiel.data import REFERENTIEL
 
 # Description de chaque notion du REFERENTIEL, par clé.
 NOTION_DESCRIPTIONS = {

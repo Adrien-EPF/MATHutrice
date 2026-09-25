@@ -1,7 +1,7 @@
 import json
 import re
 
-from mathutrice.fonctions_python.main import REFERENTIEL
+from mathutrice.referentiel.data import REFERENTIEL
 from mathutrice.llm.client import client, MODEL
 
 
