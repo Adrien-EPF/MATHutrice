@@ -85,6 +85,10 @@ def cleanup_old_conversations():
 async def lifespan(app: FastAPI):
     create_db_and_tables()
 
+    with DBSession(engine) as session:
+        if seed_if_empty(session):
+            print("Base vide : référentiel et utilisateurs de démonstration insérés.")
+
     scheduler = BackgroundScheduler()
     scheduler.add_job(cleanup_old_conversations, "interval", hours=1)
     scheduler.start()
@@ -144,6 +148,7 @@ from mathutrice.fonctions_python.main import (  # noqa: E402
     REFERENTIEL,
     generate_mixed_test,
 )
+from mathutrice.fonctions_python.seed import seed_if_empty  # noqa: E402
 from mathutrice.fonctions_python.session_generator import (  # noqa: E402
     build_notion_data_with_scores,
     generate_next_question,

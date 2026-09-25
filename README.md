@@ -22,6 +22,8 @@ Edit `.env` and set `LLM_API_KEY` (see below). Then, from the repository root:
 uvicorn mathutrice.app:app --port 8000
 ```
 
+On its first start with an empty database, the application seeds the notions and skills and one user per role: `student@epfedu.fr`, `teacher@epf.fr` and `admin@epf.fr`. Nothing is seeded once the database holds a notion or a user.
+
 Open <http://localhost:8000/>. To check that your clone works end to end, follow [`docs/smoke-test.md`](docs/smoke-test.md).
 
 If `uv sync` reports `No interpreter found for Python 3.14.7`, run `uv self update` and retry. Without uv, `pip install -e .` in a virtual environment running that Python version works too, from `pyproject.toml` rather than the lockfile.
@@ -87,9 +89,10 @@ The session cookie is signed with `SESSION_SECRET`. With the placeholder value f
 
 ## Contributing
 
-Package boundaries are machine-checked: read [`mathutrice/README.md`](mathutrice/README.md) before adding a package or importing across one, then run:
+Package boundaries are machine-checked: read [`mathutrice/README.md`](mathutrice/README.md) before adding a package or importing across one, then run the tests and the boundary checks:
 
 ```sh
+uv run pytest
 uv run tach check
 uv run python scripts/check_cycles.py
 ```
