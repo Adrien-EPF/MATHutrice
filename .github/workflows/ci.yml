@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Package boundaries
+        run: uv run tach check
+
+      - name: Import cycles
+        run: uv run python scripts/check_cycles.py
+
+      - name: Tests
+        run: uv run pytest
