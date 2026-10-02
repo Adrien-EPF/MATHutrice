@@ -14,6 +14,7 @@ Résultats possibles pour chaque question :
 
 import re
 import logging
+from mathutrice.lacune_evaluation.LLM_as_Evaluator import _parse_json
 from sympy import (
     sympify, simplify, trigsimp, cancel, cos, sin, tan, pi, sqrt, I,
     Rational, symbols, diff, expand, Abs, arg, conjugate, im, re as Re,
