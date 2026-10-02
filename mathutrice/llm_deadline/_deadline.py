@@ -11,7 +11,7 @@ from openai import APITimeoutError
 
 # Five minutes: assumption D of the Design Document, how long a student waits
 # before giving up.
-EVALUATION_DEADLINE_SECONDS = 300
+EVALUATION_DEADLINE_SECONDS = 600
 
 
 class DeadlineExceeded(Exception):
