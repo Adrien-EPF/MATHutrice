@@ -166,6 +166,22 @@ A pull request deploys nothing. The image starts one process, `uvicorn`; the
 hourly cleanup of old conversations runs inside it, in the application's
 lifespan.
 
+### Promoting to Fork production
+
+Fork production only receives an image Fork staging already received. It is
+never built for the occasion and never deployed on a push.
+
+You start the **Promotion** by hand: Actions tab, `CI`, *Run workflow*. It:
+
+1. finds the newest push run on `course-2026-fallback-clean-bench` whose
+   `deploy to staging` job passed, and logs each run it skips. It reads the
+   runs, not the staging app, because a failed deploy leaves the app set to an
+   image that never answered;
+2. deploys that run's image tag to the `production` GitHub Environment's app,
+   through the same action as staging, with production's own secrets.
+
+With no such run it stops and deploys nothing.
+
 ## Licence
 
 MIT — see [`LICENSE`](LICENSE).
