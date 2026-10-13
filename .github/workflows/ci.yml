@@ -62,71 +62,12 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      # Written at every deploy, so the GitHub Environment stays the one place
-      # a setting is changed. --output none: the command would otherwise print
-      # every setting back, secrets included.
-      # - WEBSITES_PORT: uvicorn listens on 8000, not on the 80 App Service expects.
-      # - WEBSITES_ENABLE_APP_SERVICE_STORAGE=false: the SQLite file stays on the
-      #   container's own disk, where it can take its locks. It is created and
-      #   seeded again at every start.
-      - name: Write this environment's settings
-        env:
-          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-          APP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
-          DEV_LOGIN_KEY: ${{ secrets.DEV_LOGIN_KEY }}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-        run: |
-          az webapp config appsettings set \
-            --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --output none \
-            --settings \
-              AUTH_MODE=dev \
-              WEBSITES_PORT=8000 \
-              WEBSITES_ENABLE_APP_SERVICE_STORAGE=false \
-              DATABASE_URL=sqlite:///./mathutrice.db \
-              LLM_BASE_URL=https://api.mistral.ai/v1 \
-              LLM_MODEL=ministral-14b-latest \
-              "DEV_LOGIN_KEY=$DEV_LOGIN_KEY" \
-              "SESSION_SECRET=$SESSION_SECRET" \
-              "LLM_API_KEY=$LLM_API_KEY"
-
-      # The image is public on GHCR, so the app pulls it without credentials.
-      - name: Run the image
-        env:
-          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-          APP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
-          IMAGE: ${{ steps.image.outputs.image }}
-        run: |
-          az webapp config container set \
-            --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --output none \
-            --container-image-name "$IMAGE"
-          running=$(az webapp config show --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --query linuxFxVersion --output tsv)
-          if [ "$running" != "DOCKER|$IMAGE" ]; then
-            echo "$APP_NAME is set to $running, not $IMAGE" >&2
-            exit 1
-          fi
-          echo "$APP_NAME now runs $IMAGE"
-
-      # Pulling the image is most of the wait, so allow 10 minutes. A 200 from
-      # the new container's own sign-in page; the job fails if it never comes.
-      - name: Wait until the app answers
-        env:
-          APP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
-        run: |
-          url="https://$APP_NAME.azurewebsites.net/dev/login"
-          limit=600
-          start=$(date +%s)
-          while true; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$url" || true)
-            elapsed=$(( $(date +%s) - start ))
-            if [ "$code" = 200 ]; then
-              echo "$url answers 200, ${elapsed} s after the image was set"
-              exit 0
-            fi
-            echo "${elapsed} s: $url answered ${code:-nothing}"
-            if [ "$elapsed" -ge "$limit" ]; then
-              echo "$url did not answer 200 within $limit s" >&2
-              exit 1
-            fi
-            sleep 15
-          done
+      - name: Deploy the image to staging
+        uses: ./.github/actions/deploy-to-app-service
+        with:
+          image: ${{ steps.image.outputs.image }}
+          resource-group: ${{ vars.AZURE_RESOURCE_GROUP }}
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          dev-login-key: ${{ secrets.DEV_LOGIN_KEY }}
+          session-secret: ${{ secrets.SESSION_SECRET }}
+          llm-api-key: ${{ secrets.LLM_API_KEY }}

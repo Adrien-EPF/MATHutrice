@@ -1,0 +1,105 @@
+# One deploy, whichever the environment: write that environment's settings on
+# its App Service app, have the app run the given image, and wait until it
+# answers. Staging and production both deploy through here, so production is
+# deployed exactly the way staging was, only with its own app and its own
+# secrets.
+#
+# The caller is already logged in to Azure (azure/login), as the GitHub
+# Environment it runs in.
+name: Deploy to App Service
+description: Run one image on one environment's App Service app, with that environment's settings.
+
+inputs:
+  image:
+    description: The image to run, tagged with the commit it was built from.
+    required: true
+  resource-group:
+    description: The resource group holding the app.
+    required: true
+  app-name:
+    description: The environment's App Service app.
+    required: true
+  dev-login-key:
+    description: The environment's own DEV_LOGIN_KEY.
+    required: true
+  session-secret:
+    description: The environment's own SESSION_SECRET.
+    required: true
+  llm-api-key:
+    description: LLM_API_KEY.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # Written at every deploy, so the GitHub Environment stays the one place
+    # a setting is changed. --output none: the command would otherwise print
+    # every setting back, secrets included.
+    # - WEBSITES_PORT: uvicorn listens on 8000, not on the 80 App Service expects.
+    # - WEBSITES_ENABLE_APP_SERVICE_STORAGE=false: the SQLite file stays on the
+    #   container's own disk, where it can take its locks. It is created and
+    #   seeded again at every start.
+    - name: Write this environment's settings
+      shell: bash
+      env:
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+        APP_NAME: ${{ inputs.app-name }}
+        DEV_LOGIN_KEY: ${{ inputs.dev-login-key }}
+        SESSION_SECRET: ${{ inputs.session-secret }}
+        LLM_API_KEY: ${{ inputs.llm-api-key }}
+      run: |
+        az webapp config appsettings set \
+          --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --output none \
+          --settings \
+            AUTH_MODE=dev \
+            WEBSITES_PORT=8000 \
+            WEBSITES_ENABLE_APP_SERVICE_STORAGE=false \
+            DATABASE_URL=sqlite:///./mathutrice.db \
+            LLM_BASE_URL=https://api.mistral.ai/v1 \
+            LLM_MODEL=ministral-14b-latest \
+            "DEV_LOGIN_KEY=$DEV_LOGIN_KEY" \
+            "SESSION_SECRET=$SESSION_SECRET" \
+            "LLM_API_KEY=$LLM_API_KEY"
+
+    # The image is public on GHCR, so the app pulls it without credentials.
+    - name: Run the image
+      shell: bash
+      env:
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+        APP_NAME: ${{ inputs.app-name }}
+        IMAGE: ${{ inputs.image }}
+      run: |
+        az webapp config container set \
+          --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --output none \
+          --container-image-name "$IMAGE"
+        running=$(az webapp config show --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --query linuxFxVersion --output tsv)
+        if [ "$running" != "DOCKER|$IMAGE" ]; then
+          echo "$APP_NAME is set to $running, not $IMAGE" >&2
+          exit 1
+        fi
+        echo "$APP_NAME now runs $IMAGE"
+
+    # Pulling the image is most of the wait, so allow 10 minutes. A 200 from
+    # the new container's own sign-in page; the job fails if it never comes.
+    - name: Wait until the app answers
+      shell: bash
+      env:
+        APP_NAME: ${{ inputs.app-name }}
+      run: |
+        url="https://$APP_NAME.azurewebsites.net/dev/login"
+        limit=600
+        start=$(date +%s)
+        while true; do
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$url" || true)
+          elapsed=$(( $(date +%s) - start ))
+          if [ "$code" = 200 ]; then
+            echo "$url answers 200, ${elapsed} s after the image was set"
+            exit 0
+          fi
+          echo "${elapsed} s: $url answered ${code:-nothing}"
+          if [ "$elapsed" -ge "$limit" ]; then
+            echo "$url did not answer 200 within $limit s" >&2
+            exit 1
+          fi
+          sleep 15
+        done
