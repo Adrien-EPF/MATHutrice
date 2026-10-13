@@ -144,6 +144,28 @@ tach check
 python scripts/check_cycles.py
 ```
 
+## Deploying on Azure App Service
+
+Every push to `course-2026-fallback-clean-bench` whose `architecture` job passes
+is deployed to **Fork staging**, by the `deploy to staging` job of
+`.github/workflows/ci.yml`:
+
+1. It builds one image from the `Dockerfile`, tagged with the commit
+   (`ghcr.io/<owner>/<repo>:<commit>`), and pushes it. The package must be
+   **Public** on GitHub, so that Azure pulls it without a password.
+2. It signs in to Azure with `azure/login`, as the `github-deploy` identity
+   (OpenID Connect: no Azure password is stored), from the GitHub Environment
+   `staging`'s `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID`.
+3. It writes the environment's settings to the app, from the GitHub
+   Environment's secrets (`DEV_LOGIN_KEY`, `SESSION_SECRET`, `LLM_API_KEY`) and
+   from constants written in the workflow, then sets the app to run the image.
+4. It waits until the app answers on `/dev/login`, and fails the run if it does
+   not within 10 minutes.
+
+A pull request deploys nothing. The image starts one process, `uvicorn`; the
+hourly cleanup of old conversations runs inside it, in the application's
+lifespan.
+
 ## Licence
 
 MIT — see [`LICENSE`](LICENSE).
